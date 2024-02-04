@@ -1,4 +1,6 @@
 import java.util.stream.Collectors;
+import java.util.Arrays;
+import java.util.List;
 import processing.svg.*;
 
 GeometryFactory GF;
@@ -6,12 +8,11 @@ GeometryFactory GF;
 float S = 0.001;
 float R = 0.1;
 
-int N_RACOONS_ROW = 1;
-int N_RACOONS_COL = 1;
+int N_RACOONS_ROW = 8;
+int N_RACOONS_COL = 8;
 
 void setup() {
-  size(720, 720);
-  
+  size(1080, 1080);
   GF = new GeometryFactory();
   
   // Load Racoon geometry
@@ -26,26 +27,26 @@ void setup() {
   // Transforms base racoon to base shape
   AffineTransformation baseTransformation = new AffineTransformation();
   Point centroid = baseRacoon.getCentroid();
-  baseTransformation.translate(-centroid.getX(),-centroid.getY());
-  double diameter = 2*(new MinimumBoundingCircle(baseRacoon)).getRadius();
-  baseTransformation.scale(0.95*width/(diameter*N_RACOONS_ROW),0.95*height/(diameter*N_RACOONS_COL));
+  baseTransformation.translate( -centroid.getX(), -centroid.getY());
+  double diameter = 2 * (new MinimumBoundingCircle(baseRacoon)).getRadius();
+  baseTransformation.scale(0.95 * width / (diameter * N_RACOONS_ROW),0.95 * height / (diameter * N_RACOONS_COL));
   baseTransformation.rotate(PI);
   baseRacoon = (Polygon) baseTransformation.transform(baseRacoon);
-
+  
   beginRecord(SVG, "out/final.svg");
   
   background(255);
   noFill();
   stroke(0);    
-  for(int i=0; i<N_RACOONS_ROW; i++) {
-    for(int j=0; j<N_RACOONS_COL; j++) {
-      float tolerance = min(width/N_RACOONS_ROW, height/N_RACOONS_COL) * S * pow(j+1, 3);
+  for (int i = 0; i < N_RACOONS_ROW; i++) {
+    for (int j = 0; j < N_RACOONS_COL; j++) {
+      float tolerance = min(width / N_RACOONS_ROW, height / N_RACOONS_COL) * S * pow(j + 1, 3);
       Polygon racoon = (Polygon) DouglasPeuckerSimplifier.simplify(baseRacoon, tolerance);
       pushMatrix();
-      translate((width/N_RACOONS_ROW) * ((N_RACOONS_ROW-i-1)+0.5), (height/N_RACOONS_COL) * ((N_RACOONS_COL-j-1)+0.5));
-      drawRounded(racoon.getExteriorRing().getCoordinates(), R*(i+1));
-      for(int n=0; n<racoon.getNumInteriorRing(); n++) {
-        drawRounded(racoon.getInteriorRingN(n).getCoordinates(), R*(i+1));
+      translate((width / N_RACOONS_ROW) * ((N_RACOONS_ROW - i - 1) + 0.5),(height / N_RACOONS_COL) * ((N_RACOONS_COL - j - 1) + 0.5));
+      drawRounded(racoon.getExteriorRing().getCoordinates(), R * pow((i + 1), 2) * pow((j + 1), 2));
+      for (int n = 0; n < racoon.getNumInteriorRing(); n++) {
+        drawRounded(racoon.getInteriorRingN(n).getCoordinates(), R * pow((i + 1), 2) * pow((j + 1), 2));
       }
       popMatrix();
     }
@@ -57,115 +58,48 @@ void setup() {
 }
 
 void drawRounded(Coordinate[] coords, float radius) {
-  noFill();
-  stroke(0);
-  Vector2D a, b, c;
-  a =  Vector2D.create(coords[coords.length - 1]);
-  for(int i=0; i<coords.length; i++) {
-    b = Vector2D.create(coords[i%coords.length]);
-    c = Vector2D.create(coords[(i+1)%coords.length]);
-    Vector2D ba = b.subtract(a).normalize();
-    Vector2D bc = b.subtract(c).normalize();
-    
-    
-    float sinA = (float) -ba.dot(bc.rotate(PI / 2));
-    float sinA90 = (float) ba.dot(bc);
-    float angle = asin(sinA);
-    
-    double radDirection = 1;
-    int drawDirection = 0;
-    
-    if (sinA90 < 0) {
-      if(angle > 0) {
-        radDirection = -1;
-        drawDirection = 1;
-      }
-      angle += PI;
-    } else if (angle > 0){
-      radDirection = -1;
-      drawDirection = 1;
-    }
-    
-    float lenOut = abs((cos(angle/2) * radius) / sin(angle/2));
-    float cRadius = radius;
-    if (lenOut > min((float) ba.length() / 2, (float) bc.length() / 2)) {
-      lenOut = min((float) ba.length() / 2, (float) bc.length() / 2);
-      cRadius = abs((lenOut * sin(angle/2)) / cos(angle/2));
-    }
-
-    double x = b.getX() + bc.getX() * lenOut - bc.getY() * cRadius * radDirection;
-    double y = b.getY() + bc.getY() * lenOut + bc.getX() * cRadius * radDirection;
-    
-    arc((float) x, (float) y, (float) cRadius, (float) cRadius, (float) (ba.angle() + (PI / 2) * radDirection), (float) (bc.angle() - (PI / 2) * radDirection), drawDirection);
+  ArrayList<Coordinate> closed = convertToClosed(Arrays.asList(coords), radius);
+  beginShape();
+  for (int i = 0, last = closed.size(); i<last; i += 3) { //>
+    Coordinate c1 = closed.get(i);
+    Coordinate c2 = closed.get(i + 1);
+    Coordinate c3 = closed.get(i + 2);
+    double[] c = roundIsosceles(c1, c2, c3, 0.75);
+    vertex((float) c1.x,(float) c1.y);
+    bezierVertex((float) c[0],(float) c[1],(float) c[2],(float) c[3],(float) c3.x,(float) c3.y);
   }
+  endShape(CLOSE);
 }
 
-
-//function roundedPoly(ctx, points, radiusAll) {
-//  radius = radiusAll;
-//  len = points.length;
-//  p1 = points[len - 1];
-
-//  for (i = 0; i < len; i++) {
-//    p2 = points[i % len];
-//    p3 = points[(i + 1) % len];
-
-//    A = createVector(p1.x, p1.y);
-//    B = createVector(p2.x, p2.y);
-//    C = createVector(p3.x, p3.y);
-
-//    (BA = A.sub(B)), (BC = C.sub(B));
-
-//    (BAnorm = BA.copy().normalize()), (BCnorm = BC.copy().normalize());
-
-//    sinA = -BAnorm.dot(BCnorm.copy().rotate(PI / 2));
-//    sinA90 = BAnorm.dot(BCnorm);
-//    angle = asin(sinA);
-
-//    (radDirection = 1), (drawDirection = false);
-//    if (sinA90 < 0) {
-//      angle < 0 ? (angle += PI) : ((angle += PI), (radDirection = -1), (drawDirection = true));
-//    } else {
-//      angle > 0 ? ((radDirection = -1), (drawDirection = true)) : 0;
-//    }
+ArrayList<Coordinate> convertToClosed(List<Coordinate> coords, float radius) {
+  ArrayList<Coordinate> closed = new ArrayList<Coordinate>();
+  for (int i = 0, last = coords.size(); i < last; i++) {
+    Coordinate p1 = coords.get(i);
+    Coordinate p2 = coords.get((i + 1) % last);
+    Coordinate p3 = coords.get((i + 2) % last);
     
-//    // accelDir = BAnorm.rotate(PI/2).copy().add(BCnorm)
-//    // radDirection = Math.sign(accelDir.dot(BCnorm.rotate(PI / 2)))
-//    // drawDirection = radDirection === -1
+    double dx1 = p2.x - p1.x;
+    double dy1 = p2.y - p1.y;
+    double m1 = sqrt((float)(dx1 * dx1 + dy1 * dy1));
+    Coordinate p2l = new Coordinate(p2.x - radius * dx1 / m1, p2.y - radius * dy1 / m1);
+    
+    double dx2 = p3.x - p2.x;
+    double dy2 = p3.y - p2.y;
+    double m2 = sqrt((float)(dx2 * dx2 + dy2 * dy2));
+    Coordinate p2r = new Coordinate(p2.x + radius * dx2 / m2, p2.y + radius * dy2 / m2);
+    
+    closed.add(p2l);
+    closed.add(p2);
+    closed.add(p2r);
+  }
+  return closed;
+}
 
-//    p2.radius ? (radius = p2.radius) : (radius = radiusAll);
-
-//    halfAngle = angle / 2;
-//    lenOut = abs((cos(halfAngle) * radius) / sin(halfAngle));
-
-//    // Special part A
-//    if (lenOut > min(BA.mag() / 2, BC.mag() / 2)) {
-//      lenOut = min(BA.mag() / 2, BC.mag() / 2);
-//      cRadius = abs((lenOut * sin(halfAngle)) / cos(halfAngle));
-//    } else {
-//      cRadius = radius;
-//    }
-
-//    x =
-//      B.x +
-//      BC.normalize().x * lenOut -
-//      BC.normalize().y * cRadius * radDirection;
-//    y =
-//      B.y +
-//      BC.normalize().y * lenOut +
-//      BC.normalize().x * cRadius * radDirection;
-
-//    ctx.arc(
-//      x,
-//      y,
-//      cRadius,
-//      BA.heading() + (PI / 2) * radDirection,
-//      BC.heading() - (PI / 2) * radDirection,
-//      drawDirection
-//    );
-
-//    p1 = p2;
-//    p2 = p3;
-//  }
-//  ctx.closePath();
-//}
+double[] roundIsosceles(Coordinate c1, Coordinate c2, Coordinate c3, float t) {
+  double mt = 1 - t;
+  double c1x = (mt * c1.x + t * c2.x);
+  double c1y = (mt * c1.y + t * c2.y);
+  double c2x = (mt * c3.x + t * c2.x);  
+  double  c2y = (mt * c3.y + t * c2.y);
+  return new double[]{ c1x, c1y, c2x, c2y };
+}
