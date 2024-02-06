@@ -5,33 +5,31 @@ import processing.svg.*;
 
 GeometryFactory GF;
 
-float S = 0.001;
-float R = 0.1;
 
-int N_RACOONS_ROW = 8;
-int N_RACOONS_COL = 8;
+int N_RACOONS_ROW = 4;
+int N_RACOONS_COL = 6;
 
 void setup() {
-  size(1080, 1080);
+  size(1080, 1620);
   GF = new GeometryFactory();
   
   // Load Racoon geometry
-  Polygon baseRacoon = GF.createPolygon();
+  MultiPolygon baseRacoon = GF.createMultiPolygon();
   WKTReader reader = new WKTReader(GF);
   try {
-    baseRacoon = (Polygon) reader.read(loadStrings("data/racoon.txt")[0]);
+    Polygon[] loaded = {(Polygon) reader.read(loadStrings("data/racoon.txt")[0])};
+    baseRacoon = GF.createMultiPolygon(loaded);
   } catch(ParseException e) {
     println(e);
-  }
-  
+  }  
   // Transforms base racoon to base shape
   AffineTransformation baseTransformation = new AffineTransformation();
   Point centroid = baseRacoon.getCentroid();
   baseTransformation.translate( -centroid.getX(), -centroid.getY());
   double diameter = 2 * (new MinimumBoundingCircle(baseRacoon)).getRadius();
-  baseTransformation.scale(0.95 * width / (diameter * N_RACOONS_ROW),0.95 * height / (diameter * N_RACOONS_COL));
+  baseTransformation.scale(0.90 * width / (diameter * N_RACOONS_ROW), 0.90 * height / (diameter * N_RACOONS_COL));
   baseTransformation.rotate(PI);
-  baseRacoon = (Polygon) baseTransformation.transform(baseRacoon);
+  baseRacoon = (MultiPolygon) baseTransformation.transform(baseRacoon);
   
   beginRecord(SVG, "out/final.svg");
   
@@ -40,14 +38,26 @@ void setup() {
   stroke(0);    
   for (int i = 0; i < N_RACOONS_ROW; i++) {
     for (int j = 0; j < N_RACOONS_COL; j++) {
-      float tolerance = min(width / N_RACOONS_ROW, height / N_RACOONS_COL) * S * pow(j + 1, 3);
-      Polygon racoon = (Polygon) DouglasPeuckerSimplifier.simplify(baseRacoon, tolerance);
+      float tolerance = min(width / N_RACOONS_ROW, height / N_RACOONS_COL) * 0.005 * pow(j + 2, 2) * sqrt(i + 1);
+      Geometry simplified = DouglasPeuckerSimplifier.simplify(baseRacoon, tolerance);
+      MultiPolygon racoon;
+      if (simplified instanceof Polygon) {
+        Polygon[] polys = new Polygon[1];
+        polys[0] = (Polygon) simplified;
+        racoon = GF.createMultiPolygon(polys);
+      } else {
+        racoon = (MultiPolygon) simplified;
+      }
       pushMatrix();
       translate((width / N_RACOONS_ROW) * ((N_RACOONS_ROW - i - 1) + 0.5),(height / N_RACOONS_COL) * ((N_RACOONS_COL - j - 1) + 0.5));
-      drawRounded(racoon.getExteriorRing().getCoordinates(), R * pow((i + 1), 2) * pow((j + 1), 2));
-      for (int n = 0; n < racoon.getNumInteriorRing(); n++) {
-        drawRounded(racoon.getInteriorRingN(n).getCoordinates(), R * pow((i + 1), 2) * pow((j + 1), 2));
-      }
+      float radius = tolerance * 0.0005 * exp(pow(i + 1, 1.5));
+      for (int p = 0; p < racoon.getNumGeometries(); p++) {
+        Polygon polygon = (Polygon) racoon.getGeometryN(p);
+        drawRounded(polygon.getExteriorRing().getCoordinates(), radius);
+        for (int n = 0; n < polygon.getNumInteriorRing(); n++) {
+          drawRounded(polygon.getInteriorRingN(n).getCoordinates(), radius);
+        }
+      } 
       popMatrix();
     }
   }
