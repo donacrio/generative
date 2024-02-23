@@ -50,7 +50,7 @@ void setup() {
       }
       pushMatrix();
       translate((width / N_RACOONS_ROW) * ((N_RACOONS_ROW - i - 1) + 0.5),(height / N_RACOONS_COL) * ((N_RACOONS_COL - j - 1) + 0.5));
-      float radius = tolerance * 0.0005 * exp(pow(i + 1, 1.5));
+      float radius = tolerance * 0.15 * (i + 1) * sqrt(j + 1);
       for (int p = 0; p < racoon.getNumGeometries(); p++) {
         Polygon polygon = (Polygon) racoon.getGeometryN(p);
         drawRounded(polygon.getExteriorRing().getCoordinates(), radius);
