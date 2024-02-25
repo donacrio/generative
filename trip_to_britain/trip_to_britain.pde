@@ -55,6 +55,8 @@ void setup() {
   background(SKECTH_BACKGROUND[0], SKECTH_BACKGROUND[1], SKECTH_BACKGROUND[2]);
   image(waterTexture, 0, 0);
   
+  drawCanvas();
+  
   save("out/final.png");  
   noLoop();
 }
