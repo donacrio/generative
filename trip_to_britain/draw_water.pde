@@ -4,14 +4,14 @@ void drawWater(
   int[][] texture_palette,
   float mask_perlin,
   float mask_weight
- ){
-  PGraphics waterTexture = _createWaterTexture(texture_perlin, texture_weight, texture_palette);
+ ) {
+  PGraphics waterTexture = createWaterTexture(texture_perlin, texture_weight, texture_palette);
   PGraphics waterMask = _createWaterMask(mask_perlin, mask_weight);
   waterTexture.mask(waterMask);
   image(waterTexture, 0, 0);
 }
 
-PGraphics _createWaterTexture(float perlin, float weight, int[][] palette) {  
+PGraphics createWaterTexture(float perlin, float weight, int[][] palette) {  
   FlowField waterTextureFlowField = new FlowField(perlin,weight * 2,weight * 1.0);
   
   PGraphics waterTexture = createGraphics(width, height, P2D);

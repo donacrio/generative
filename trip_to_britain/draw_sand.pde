@@ -1,9 +1,9 @@
 void drawSand(int n, int[][] palette) {
-  PGraphics sandTexture = _createSandTexture(n, palette);
+  PGraphics sandTexture = createSandTexture(n, palette);
   image(sandTexture, 0, 0);
 }
 
-PGraphics _createSandTexture(int n, int[][] palette) {
+PGraphics createSandTexture(int n, int[][] palette) {
   PGraphics sandTexture = createGraphics(width, height, P2D);
   sandTexture.beginDraw();
   
