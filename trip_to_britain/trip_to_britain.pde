@@ -1,7 +1,8 @@
-float ELEVATION_SCALE = 5;
-float ELEVATIOELEVATION_PERLIN_INCR = 0.015;
+float ELEVATION_SCALE = 1;
+float ELEVATIOELEVATION_PERLIN_INCR = 0.005;
 
-int SAND_TEXTURE_N_WATERCOLOR = 300;
+int SAND_TEXTURE_WATERCOLOR_NUMBER = 300;
+int SAND_TEXTURE_WATERCOLOR_RADIUS = 100;
 int[][] SAND_PALETTE = {
   {246,215,176} ,
   {242,210,169} ,
@@ -10,7 +11,7 @@ int[][] SAND_PALETTE = {
   {225,191,146} 
 };
 
-float WATER_TEXTURE_PERLIN = 0.05;
+float WATER_TEXTURE_PERLIN = 0.005;
 float WATER_TEXTURE_WEIGHT = 1;
 int[][] WATER_TEXTURE_PALETTE = {
   {6,66,115} , 
@@ -34,24 +35,24 @@ void setup() {
     ELEVATIOELEVATION_PERLIN_INCR * ELEVATION_SCALE
    );
     
-    //PGraphics waterTexture = createWaterTexture(WATER_TEXTURE_PERLIN, WATER_TEXTURE_WEIGHT, WATER_TEXTURE_PALETTE);
-    PGraphics waterTexture = createGraphics(width, height, P2D);
-    waterTexture.beginDraw();
-    waterTexture.background(127,205,255);
-    waterTexture.endDraw();
+    PGraphics waterTexture = createWaterTexture(WATER_TEXTURE_PERLIN, WATER_TEXTURE_WEIGHT, WATER_TEXTURE_PALETTE);
+    // PGraphics waterTexture = createGraphics(width, height, P2D);
+    // waterTexture.beginDraw();
+    // waterTexture.background(127,205,255);
+    // waterTexture.endDraw();
     PGraphics waterMask = createElevationMask(
       elevationMatrix, ELEVATION_SCALE, 0
      );
     waterTexture.mask(waterMask);
     image(waterTexture, 0, 0);
     
-    //PGraphics sandTexture = createSandTexture(SAND_TEXTURE_N_WATERCOLOR, SAND_PALETTE);
-    PGraphics sandTexture = createGraphics(width, height, P2D);
-    sandTexture.beginDraw();
-    sandTexture.background(236,204,162);
-    sandTexture.endDraw();
+    PGraphics sandTexture = createSandTexture(SAND_TEXTURE_WATERCOLOR_NUMBER, SAND_TEXTURE_WATERCOLOR_RADIUS, SAND_PALETTE);
+    // PGraphics sandTexture = createGraphics(width, height, P2D);
+    // sandTexture.beginDraw();
+    // sandTexture.background(236,204,162);
+    // sandTexture.endDraw();
     PGraphics sandMask = createElevationMask(
-      elevationMatrix, ELEVATION_SCALE, 0.5
+      elevationMatrix, ELEVATION_SCALE, 0.55
      );
     sandTexture.mask(sandMask);
     image(sandTexture, 0, 0);
@@ -61,7 +62,7 @@ void setup() {
     rockTexture.background(101,83,83);
     rockTexture.endDraw();
     PGraphics rockMask = createElevationMask(
-      elevationMatrix, ELEVATION_SCALE, 0.55
+      elevationMatrix, ELEVATION_SCALE, 0.65
      );
     rockTexture.mask(rockMask);
     image(rockTexture, 0, 0);
@@ -71,7 +72,7 @@ void setup() {
     grassTexture.background(65,152,10);
     grassTexture.endDraw();
     PGraphics grassMask = createElevationMask(
-      elevationMatrix, ELEVATION_SCALE, 0.7
+      elevationMatrix, ELEVATION_SCALE, 0.75
      );
     grassTexture.mask(grassMask);
     image(grassTexture, 0, 0);
