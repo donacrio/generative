@@ -1,11 +1,16 @@
 void setup() {
-  size(1024, 1024, P2D);
+  size(1024, 1024, P3D);
+  
   
   PImage img = loadImage("images/paper.jpg");
   img.resize(width, height);
   image(img, 0, 0);
   
-  int res = width / 20;
+  PGraphics waterTexture = createGraphics(width, height, P2D);
+  waterTexture.beginDraw();
+  
+  // Water elevation matrix creation
+  int res = width / 50;
   float xIncr = 0.01 * res;
   float yIncr = 0.01 * res;
   int rows = (int)(height / res) + 1;
@@ -38,25 +43,30 @@ void setup() {
     }
   }
   
+  // Water colors
+  int waterRes = width / 20;
+  int waterRows = (int)(height / waterRes) + 1;
+  int waterCols = (int)(width / waterRes) + 1;
+  
   ArrayList<ArrayList<Watercolor>> waterLayers = new ArrayList<ArrayList<Watercolor>>();
   for (int i = 0; i < 6; i++) {
     waterLayers.add(new ArrayList<Watercolor>());
   }
-  for (int y = 0; y < rows; y++) {
-    for (int x = 0; x < cols; x++) {
+  for (int y = 0; y < waterRows; y++) {
+    for (int x = 0; x < waterCols; x++) {
       float value = waterMatrix[x][y];
       if (value < 0.1) {
-        waterLayers.get(0).add(new Watercolor(x * res, y * res, res));
+        waterLayers.get(0).add(new Watercolor(x * waterRes, y * waterRes, waterRes));
       } else if (value < 0.3) {
-        waterLayers.get(1).add(new Watercolor(x * res, y * res, res));
+        waterLayers.get(1).add(new Watercolor(x * waterRes, y * waterRes, waterRes));
       } else if (value < 0.5) {
-        waterLayers.get(2).add(new Watercolor(x * res, y * res, res));
+        waterLayers.get(2).add(new Watercolor(x * waterRes, y * waterRes, waterRes));
       } else if (value < 0.7) {
-        waterLayers.get(3).add(new Watercolor(x * res, y * res, res));
+        waterLayers.get(3).add(new Watercolor(x * waterRes, y * waterRes, waterRes));
       } else if (value < 0.9) {
-        waterLayers.get(4).add(new Watercolor(x * res, y * res, res));
+        waterLayers.get(4).add(new Watercolor(x * waterRes, y * waterRes, waterRes));
       } else {
-        waterLayers.get(5).add(new Watercolor(x * res, y * res, res));
+        waterLayers.get(5).add(new Watercolor(x * waterRes, y * waterRes, waterRes));
       }
     }
   }
@@ -85,7 +95,8 @@ void setup() {
     waterMask.fill(255, 255, 255, 0.005);
     ArrayList<Watercolor> watercolorLayer = waterLayers.get(i);
     for (int j = 0; j < watercolorLayer.size(); j++) {
-      print("\rRendering water layer " + i + "/" + (waterLayers.size() - 1) + ":",(int)(100 * j / watercolorLayer.size()) + "%");
+      print("\r");
+      print("Rendering water layer " + i + "/" + (waterLayers.size() - 1) + ":",(int)(100 * (j + 1) / watercolorLayer.size()) + "%");
       Watercolor watercolor = watercolorLayer.get(j);
       for (Polygon polygon : watercolor.shape) { 
         waterMask.beginShape();
@@ -97,100 +108,166 @@ void setup() {
     }
     waterMask.endDraw();
     waterLayerTexture.mask(waterMask);
-    image(waterLayerTexture, 0, 0);
+    waterTexture.image(waterLayerTexture, 0, 0);
   }
   
-  float minShoreMatrix = Integer.MAX_VALUE;
-  float maxShoreMatrix = 0;
-  float[][] shoreMatrix = new float[cols][rows];
-  for (int y = 0; y < rows; y++) {
-    for (int x = 0; x < cols; x++) {
-      float value = sqrt(pow(abs(x - cols), 2)  + pow(0.5 * abs(y - rows / 2), 2));
-      shoreMatrix[x][y] = value;
-      if (value < minShoreMatrix) {
-        minShoreMatrix = value;
+  // Wave effect
+  float minWaveMatrix = Integer.MAX_VALUE;
+  float maxWaveMatrix = 0;
+  float[][] waveMatrix = new float[waterCols][waterRows];
+  for (int y = 0; y < waterRows; y++) {
+    for (int x = 0; x < waterCols; x++) {
+      float value = sqrt(pow(0.5 * abs(x - waterCols / 2), 2)  + pow(abs(y - 0), 2));
+      waveMatrix[x][y] = value;
+      if (value < minWaveMatrix) {
+        minWaveMatrix = value;
       }
-      if (value > maxShoreMatrix) {
-        maxShoreMatrix = value;
+      if (value > maxWaveMatrix) {
+        maxWaveMatrix = value;
       }
     }
   }
   // Normalize
-  for (int y = 0; y < rows; y++) {
-    for (int x = 0; x < cols; x++) {
-      shoreMatrix[x][y] = 1 - map(shoreMatrix[x][y], minShoreMatrix, maxShoreMatrix, 0, 1);
+  for (int y = 0; y < waterRows; y++) {
+    for (int x = 0; x < waterCols; x++) {
+      waveMatrix[x][y] = 1 - map(waveMatrix[x][y], minWaveMatrix, maxWaveMatrix, 0, 1);
     }
   }
   
-  ArrayList<ArrayList<Watercolor>> shoreLayers = new ArrayList<ArrayList<Watercolor>>();
+  ArrayList<ArrayList<Watercolor>> waveLayers = new ArrayList<ArrayList<Watercolor>>();
   for (int i = 0; i < 6; i++) {
-    shoreLayers.add(new ArrayList<Watercolor>());
+    waveLayers.add(new ArrayList<Watercolor>());
   }
-  for (int y = 0; y < rows; y++) {
-    for (int x = 0; x < cols; x++) {
-      float value = shoreMatrix[x][y];
+  for (int y = 0; y < waterRows; y++) {
+    for (int x = 0; x < waterCols; x++) {
+      float value = waveMatrix[x][y];
       if (value < 0.1) {
-        shoreLayers.get(0).add(new Watercolor(x * res, y * res, res));
+        waveLayers.get(0).add(new Watercolor(x * waterRes, y * waterRes, waterRes));
       } else if (value < 0.3) {
-        shoreLayers.get(1).add(new Watercolor(x * res, y * res, res));
+        waveLayers.get(1).add(new Watercolor(x * waterRes, y * waterRes, waterRes));
       } else if (value < 0.5) {
-        shoreLayers.get(2).add(new Watercolor(x * res, y * res, res));
+        waveLayers.get(2).add(new Watercolor(x * waterRes, y * waterRes, waterRes));
       } else if (value < 0.7) {
-        shoreLayers.get(3).add(new Watercolor(x * res, y * res, res));
+        waveLayers.get(3).add(new Watercolor(x * waterRes, y * waterRes, waterRes));
       } else if (value < 0.9) {
-        shoreLayers.get(4).add(new Watercolor(x * res, y * res, res));
+        waveLayers.get(4).add(new Watercolor(x * waterRes, y * waterRes, waterRes));
       } else {
-        shoreLayers.get(5).add(new Watercolor(x * res, y * res, res));
+        waveLayers.get(5).add(new Watercolor(x * waterRes, y * waterRes, waterRes));
       }
     }
   }
-  
-  colorMode(HSB, 360, 100, 100, 1);
-  color[] shoreColors = {
-    color(191, 82.9, 27.5, 1),
-      color(192, 79.6, 38.4, 1),
-      color(192, 67.6, 53.3, 1),
-      color(191, 50.0, 58.8, 1),
-      color(192,26.8, 76.1, 1),
-      color(180, 13.5, 78.4, 1)
-    };
   
   println("");
-  for (int i = 0; i < shoreLayers.size(); i++) {
-    PGraphics shoreLayerTexture = createGraphics(width, height, P2D);
-    shoreLayerTexture.beginDraw();
-    shoreLayerTexture.background(shoreColors[i]);
-    shoreLayerTexture.endDraw();
+  for (int i = 0; i < waveLayers.size(); i++) {
+    PGraphics waveLayerTexture = createGraphics(width, height, P2D);
+    waveLayerTexture.beginDraw();
+    waveLayerTexture.background(waterColors[i]);
+    waveLayerTexture.endDraw();
     
-    PGraphics shoreMask = createGraphics(width, height, P2D);
-    shoreMask.beginDraw();
-    shoreMask.colorMode(RGB, 255, 255, 255, 1);
-    shoreMask.noStroke();
-    shoreMask.fill(255, 255, 255, 0.005);
-    ArrayList<Watercolor> shoreLayer = shoreLayers.get(i);
-    for (int j = 0; j < shoreLayer.size(); j++) {
-      print("\rRendering shore layer " + i + "/" + (shoreLayers.size() - 1) + ":",(int)(100 * j / shoreLayer.size()) + "%");
-      Watercolor watercolor = shoreLayer.get(j);
+    PGraphics waveMask = createGraphics(width, height, P2D);
+    waveMask.beginDraw();
+    waveMask.colorMode(RGB, 255,255, 255, 1);
+    waveMask.noStroke();
+    waveMask.fill(255, 255, 255,0.005);
+    ArrayList<Watercolor> waveLayer = waveLayers.get(i);
+    for (int j = 0; j < waveLayer.size(); j++) {
+      print("\r");
+      print("Rendering shore layer " + i + "/" + (waveLayers.size() - 1) + ":",(int)(100 * (j + 1) / waveLayer.size()) + " % ");
+      Watercolor watercolor = waveLayer.get(j);
       for (Polygon polygon : watercolor.shape) { 
-        shoreMask.beginShape();
+        waveMask.beginShape();
         for (Coordinate coord : polygon.getExteriorRing().getCoordinates()) {
-          shoreMask.vertex((float)coord.x,(float) coord.y);
+          waveMask.vertex((float)coord.x,(float) coord.y);
         }
-        shoreMask.endShape();
+        waveMask.endShape();
       }
     }
-    shoreMask.endDraw();
-    shoreLayerTexture.mask(shoreMask);
-    image(shoreLayerTexture, 0, 0);
+    waveMask.endDraw();
+    waveLayerTexture.mask(waveMask);
+    waterTexture.image(waveLayerTexture, 0, 0);
   }
+  waterTexture.endDraw();
   
+  // Water elevation rendering
+  pushMatrix();
+  translate(0, 300);
+  rotateX(PI / 3);
+  // image(waterTexture, 0, 0);
+  noStroke();
+  for (int y = 0; y < rows - 1; y++) {
+    beginShape(TRIANGLE_STRIP);
+    texture(waterTexture);
+    for (int x = 0; x < cols; x++) {
+      vertex(x * waterRes, y * waterRes, 50 * (waterMatrix[x][y] - 0.5), x * waterRes, y * waterRes);
+      vertex(x * waterRes,(y + 1) * waterRes, 50 * (waterMatrix[x][y + 1] - 0.5), x * waterRes,(y + 1) * waterRes);
+    }
+    endShape();
+  }
+  popMatrix();
+  // image(waterTexture, 0, 0);
+  //int rockRes = width / 50;
+  //int rockRows = (int)(height /rockRes) + 1;
+  //int rowCols = (int)(width / rockRes) + 1;
+  //colorMode(HSB, 360, 100, 100,1);
+  //color[] rockColors = {
+  //color(120, 1.3, 29.8, 1),
+  //color(96, 4.6, 42.7, 1),
+  //color(192, 67.6, 53.3, 1),
+  //color(60, 5.2, 89.8, 1),
+  //color(15, 27.3, 17.3, 1),
+  //color(15, 38.1, 32.9, 1)
+  //};
   
-  // for (int y = 0; y < rows; y++) {
-  //   for (int x = 0; x < cols; x++) {
-  //     float value = map(waterMatrix[x][y] +shoreMatrixs[x][y], 0, 2, 0, 1);
-  //     fill(value * 255);
-  //     rect(x * res, y * res, res, res);
-  //   }
+  //float[][] rockMatrix = new float[rowCols][rockRows];
+  //float minRockMatrix = Integer.MAX_VALUE;
+  //float maxRockMatrix = 0;
+  //float yOff = 0;
+  //for (int y = 0; y < rockRows;y++) {
+  //float xOff = 0;
+  //for (int x = 0; x < rowCols; x++) {
+  //float value = noise(xOff,yOff);
+  //rockMatrix[x][y] = value;
+  //if (value < minRockMatrix) {
+  //minRockMatrix = value;
+  //}
+  //if (value > maxRockMatrix) {
+  //maxRockMatrix = value;
+  //}
+  //xOff += waterXIncr;
+  //}
+  //yOff += waterYIncr;
+  // }
+  //// Normalize
+  //for (int y = 0; y < rockRows;y++) {
+  //for (int x = 0; x < rowCols; x++) {
+  //rockMatrix[x][y] = map(rockMatrix[x][y], minRockMatrix, maxRockMatrix, 0, 50);
+  //}
+  // }
+  
+  //PGraphics rockTexture = createGraphics(width, height, P3D);
+  //rockTexture.beginDraw();
+  //rockTexture.translate(0, 300);
+  //rockTexture.rotateX(PI / 3);
+  //rockTexture.colorMode(RGB, 255, 255, 255, 1);
+  //rockTexture.background(0, 0, 0);
+  //rockTexture.stroke(255, 255, 255, 1.0);
+  //rockTexture.noFill();
+  //for (int y = 0; y < rockRows - 1; y++) {
+  //rockTexture.beginShape(TRIANGLE_STRIP);
+  //for (int x = 0; x < rowCols; x++) {
+  //rockTexture.vertex(x * rockRes, y * rockRes, rockMatrix[x][y]);
+  //rockTexture.vertex(x * rockRes,(y + 1) * rockRes, rockMatrix[x][y + 1]);
+  //}
+  //rockTexture.endShape();
+  // }
+  //rockTexture.endDraw();
+  //image(rockTexture, 0, 0);
+  //for (int y = 0; y < waterRows; y++) {
+  //for (int x = 0; x < waterCols; x++) {
+  //float value = map(waterMatrix[x][y] +waveMatrixs[x][y], 0, 2, 0, 1);
+  //fill(value * 255);
+  //rect(x * waterRes, y * waterRes, waterRes, waterRes);
+  //}
   // }
   
   save("out/final.png");  
