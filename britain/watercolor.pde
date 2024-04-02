@@ -1,14 +1,50 @@
+class Painting {
+  int w;
+  int h;
+  ArrayList<Watercolor> watercolors;
+  
+  Painting(int w, int h) {
+    this.w = w;
+    this.h = h;
+    this.watercolors = new ArrayList<Watercolor>();
+  }
+  
+  void render() {
+    int maxNumLayers = 0;
+    for (Watercolor watercolor : watercolors) {
+      maxNumLayers = Math.max(maxNumLayers, watercolor.shape.size());
+    }
+    noStroke();
+    for (int i = 0; i < maxNumLayers; i++) {
+      print("\rRendering layer " + (i + 1) + " of " + maxNumLayers);
+      for (Watercolor watercolor : this.watercolors) {
+        if (i < watercolor.shape.size()) {
+          Polygon layer = watercolor.shape.get(i);
+          fill(watercolor.c);
+          beginShape();
+          for (Coordinate coord : layer.getExteriorRing().getCoordinates()) {
+            vertex((float)coord.x,(float) coord.y);
+          }
+          endShape(CLOSE);
+        }
+      }
+    }
+  }
+}
+
 class Watercolor {
   
   private GeometryFactory gf;
   ArrayList<Polygon> shape;
+  color c;
   
-  Watercolor(Polygon polygon) {   
+  Watercolor(Polygon polygon, color c) {   
     this.gf = new GeometryFactory();
     this.shape = createWatercolorShape(polygon);
+    this.c = c;
   }
   
-  Watercolor(float x, float y, float radius) {
+  Watercolor(float x, float y, float radius, color c) {
     Coordinate[] coords = new Coordinate[9];
     for (int i = 0; i < 8; i++) {
       coords[i] = new Coordinate(x + radius * cos(i * 2 * PI / 8), y + radius * sin(i * 2 * PI / 8));
@@ -18,6 +54,7 @@ class Watercolor {
     this.gf = gf;
     Polygon polygon = gf.createPolygon(coords);
     this.shape = createWatercolorShape(polygon);
+    this.c = c;
   }
   
   private ArrayList<Polygon> createWatercolorShape(Polygon polygon) {    
