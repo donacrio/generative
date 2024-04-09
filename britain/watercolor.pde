@@ -3,34 +3,66 @@ class Painting {
   int h;
   ArrayList<Watercolor> watercolors;
   
+  private int _i = 0;
+  private int _j = 0;
+  private Integer _maxNumLayers;
+  
   Painting(int w, int h) {
     this.w = w;
     this.h = h;
     this.watercolors = new ArrayList<Watercolor>();
   }
   
-  void render() {
-    int maxNumLayers = 0;
-    for (Watercolor watercolor : watercolors) {
-      maxNumLayers = Math.max(maxNumLayers, watercolor.shape.size());
+  private Integer maxNumLayer() {
+    if (this._maxNumLayers == null) {
+      this._maxNumLayers = 0;
+      for (Watercolor watercolor : watercolors) {
+        this._maxNumLayers = Math.max(this._maxNumLayers, watercolor.shape.size());
+      }
     }
-    noStroke();
-    for (int i = 0; i < maxNumLayers; i++) {
-      print("\rRendering layer " + (i + 1) + " of " + maxNumLayers);
-      for (Watercolor watercolor : this.watercolors) {
-        if (i < watercolor.shape.size()) {
-          Polygon layer = watercolor.shape.get(i);
-          fill(watercolor.c);
-          beginShape();
-          for (Coordinate coord : layer.getExteriorRing().getCoordinates()) {
-            vertex((float)coord.x,(float) coord.y);
+    return this._maxNumLayers;
+  }
+  
+  boolean drawNext(PGraphics pg) {
+    if (this._i < this.maxNumLayer()) {
+      if (this._j < this.watercolors.size()) {
+        println(this._i * this.watercolors.size() + this._j, this._i, this._j);
+        Watercolor watercolor = this.watercolors.get(this._j);
+        PGraphics texture = createGraphics(this.w, this.h);
+        texture.beginDraw();
+        texture.background(watercolor.c);
+        texture.endDraw();
+        PGraphics mask = createGraphics(this.w, this.h);
+        mask.beginDraw();
+        mask.noStroke();
+        mask.colorMode(RGB, 255, 255, 255, 1);
+        mask.background(0,0,0,1);
+        mask.fill(255,255,255, 0.04);
+        Polygon layer = watercolor.shape.get(this._i);
+        mask.beginShape();
+        for (Coordinate coord : layer.getExteriorRing().getCoordinates()) {
+          mask.vertex((float)coord.x,(float) coord.y);
+        }
+        mask.endShape();
+        mask.endDraw();
+        texture.mask(mask);
+        texture.get();
+        pg.image(texture, 0, 0);
+        
+        this._j++;
+        if (this._j == this.watercolors.size()) {
+          this._j = 0;
+          this._i++;
+          if (this._i == this.maxNumLayer()) {
+            return false;
           }
-          endShape(CLOSE);
         }
       }
     }
+    return true;
   }
 }
+
 
 class Watercolor {
   

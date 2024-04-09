@@ -1,16 +1,38 @@
+Painting painting;
+PGraphics pg;
+PImage bg;
+
 void setup() {
-  size(720, 1015, OPENGL);
+  size(800, 800, P2D);
   
-  background(255);
+  bg = loadImage("images/paper.jpg");
+  bg.resize(width, height);
   
-  float frameRatio = 0.9;
-  float w = width - (1.0 - frameRatio) * height;
-  float h = frameRatio * height;
-  // drawFrame(w, h);
-  drawSea(width / 2, height / 2, w, h, w / 10);
+  painting = createSea(width, height, width / 4);
   
-  save("out/final.png");  
-  noLoop();
+  pg = createGraphics(width, height, P2D);
+  
+}
+
+boolean shouldContinue = true;
+
+void draw() {
+  image(bg, 0, 0);
+  
+  pg.beginDraw();
+  shouldContinue = painting.drawNext(pg);
+  pg.endDraw();
+  
+  
+  pg.get();
+  image(pg, 0, 0);
+  
+  if (!shouldContinue) {
+    save("out/final.png");
+    println("Done!");
+    noLoop();
+  }
+  
 }
 
 void drawFrame(float w, float h) {
@@ -21,7 +43,7 @@ void drawFrame(float w, float h) {
   rect(width / 2,height / 2 , w, h);
 }
 
-void drawSea(float centerX, float centerY, float w, float h,float res) {
+Painting createSea(float w, float h,float res) {
   float xIncr = 0.01 * res;
   float yIncr = 0.01 * res;
   int rows = (int)(h / res) + 1;
@@ -56,34 +78,34 @@ void drawSea(float centerX, float centerY, float w, float h,float res) {
   }
   
   // Create water color layers and sort by elevation
-  colorMode(HSB, 360, 100, 100, 1);
+  colorMode(HSB,360, 100, 100, 1);
   color[] colors = {
-    color(191, 82.9, 27.5, 0.02),
-      color(192, 79.6, 38.4, 0.02),
-      color(192, 67.6, 53.3, 0.02),
-      color(191, 50.0, 58.8, 0.02),
-      color(192,26.8, 76.1, 0.02),
-      color(180, 13.5, 78.4, 0.02),
+    color(191, 82.9, 27.5, 1),
+      color(192, 79.6, 38.4, 1),
+      color(192, 67.6, 53.3, 1),
+      color(191, 50.0, 58.8, 1),
+      color(192,26.8, 76.1, 1),
+      color(180, 13.5, 78.4, 1),
     };
   Painting painting = new Painting((int)w,(int)h);
   for (int y = 0; y < rows; y++) {
     for (int x = 0; x < cols; x++) {
       float value = matrix[x][y];
       if (value < 0.1) {
-        painting.watercolors.add(new Watercolor(x * res, y * res, 0.5 * res, colors[0]));
+        painting.watercolors.add(new Watercolor(x * res, y * res,0.25 * res, colors[0]));
       } else if (value < 0.3) {
-        painting.watercolors.add(new Watercolor(x * res, y * res, 0.5 * res, colors[1]));
+        painting.watercolors.add(new Watercolor(x * res, y * res,0.25 * res, colors[1]));
       } else if (value < 0.5) {
-        painting.watercolors.add(new Watercolor(x * res, y * res, 0.5 * res, colors[2]));
+        painting.watercolors.add(new Watercolor(x * res, y * res,0.25 * res, colors[2]));
       } else if (value < 0.7) {
-        painting.watercolors.add(new Watercolor(x * res, y * res, 0.5 * res, colors[3]));
+        painting.watercolors.add(new Watercolor(x * res, y * res,0.25 * res, colors[3]));
       } else if (value < 0.9) {
-        painting.watercolors.add(new Watercolor(x * res, y * res, 0.5 * res, colors[4]));
+        painting.watercolors.add(new Watercolor(x * res, y * res,0.25 * res, colors[4]));
       } else {
-        painting.watercolors.add(new Watercolor(x * res, y * res, 0.5 * res, colors[5]));
+        painting.watercolors.add(new Watercolor(x * res, y * res,0.25 * res, colors[5]));
       }
     }
   }
-  painting.render();
+  return painting;
 }
 
