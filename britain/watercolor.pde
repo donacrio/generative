@@ -28,25 +28,38 @@ class Painting {
       if (this._j < this.watercolors.size()) {
         println(this._i * this.watercolors.size() + this._j, this._i, this._j);
         Watercolor watercolor = this.watercolors.get(this._j);
+        Polygon layer = watercolor.shape.get(this._i);
         PGraphics texture = createGraphics(this.w, this.h);
         texture.beginDraw();
         texture.background(watercolor.c);
         texture.endDraw();
+        PGraphics textureMask = createGraphics(this.w, this.h);
+        textureMask.beginDraw();
+        textureMask.noStroke();
+        textureMask.colorMode(RGB, 255, 255, 255, 1);
+        textureMask.background(0, 0, 0, 1);
+        textureMask.fill(255,255,255, 0.05);
+        textureMask.beginShape();
+        for (Coordinate coord : layer.getExteriorRing().getCoordinates()) {
+          textureMask.vertex((float)coord.x,(float) coord.y);
+        }
+        textureMask.endShape();
+        textureMask.endDraw();
         PGraphics mask = createGraphics(this.w, this.h);
         mask.beginDraw();
+        mask.fill(255, 255, 255, 1);
         mask.noStroke();
-        mask.colorMode(RGB, 255, 255, 255, 1);
-        mask.background(0,0,0,1);
-        mask.fill(255,255,255, 0.04);
-        Polygon layer = watercolor.shape.get(this._i);
-        mask.beginShape();
-        for (Coordinate coord : layer.getExteriorRing().getCoordinates()) {
-          mask.vertex((float)coord.x,(float) coord.y);
+        mask.fill(0,0,0, 1);
+        for (int i = 0; i < 1000; i++) {
+          mask.ellipse(
+            random(0, this.w),
+            random(0, this.h),
+           (float)boundedRandomGaussian(0.03 * width, 0.005 * width, 0, width),
+           (float)boundedRandomGaussian(0.03 * height, 0.005 * height, 0, height)
+           );
         }
-        mask.endShape();
-        mask.endDraw();
-        texture.mask(mask);
-        texture.get();
+        textureMask.blend(mask, 0, 0, this.w, this.h, 0, 0, this.w, this.h, DARKEST);
+        texture.mask(textureMask);
         pg.image(texture, 0, 0);
         
         this._j++;
@@ -93,12 +106,12 @@ class Watercolor {
     ArrayList<Polygon> polygons = new ArrayList<Polygon>();
     Polygon basePolygon = polygon;
     basePolygon = this.createWatercolorShapeStep(basePolygon);
-    for (int i = 0; i < 60; i++) {
-      if (i ==  20 || i ==  40) {
+    for (int i = 0; i < 30; i++) {
+      if (i ==  10 || i ==  20) {
         basePolygon = this.createWatercolorShapeStep(basePolygon);
       }
       Polygon newPolygon = basePolygon;
-      for (int j = 0; j < 3; j++) {
+      for (int j = 0; j < 6; j++) {
         newPolygon = this.createWatercolorShapeStep(newPolygon);
       }
       polygons.add(newPolygon);

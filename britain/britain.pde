@@ -8,7 +8,7 @@ void setup() {
   bg = loadImage("images/paper.jpg");
   bg.resize(width, height);
   
-  painting = createSea(width, height, width / 4);
+  painting = createSea(width, height, width / 3);
   
   pg = createGraphics(width, height, P2D);
   
@@ -92,17 +92,17 @@ Painting createSea(float w, float h,float res) {
     for (int x = 0; x < cols; x++) {
       float value = matrix[x][y];
       if (value < 0.1) {
-        painting.watercolors.add(new Watercolor(x * res, y * res,0.25 * res, colors[0]));
+        painting.watercolors.add(new Watercolor(x * res, y * res,0.4 * res, colors[0]));
       } else if (value < 0.3) {
-        painting.watercolors.add(new Watercolor(x * res, y * res,0.25 * res, colors[1]));
+        painting.watercolors.add(new Watercolor(x * res, y * res,0.4 * res, colors[1]));
       } else if (value < 0.5) {
-        painting.watercolors.add(new Watercolor(x * res, y * res,0.25 * res, colors[2]));
+        painting.watercolors.add(new Watercolor(x * res, y * res,0.4 * res, colors[2]));
       } else if (value < 0.7) {
-        painting.watercolors.add(new Watercolor(x * res, y * res,0.25 * res, colors[3]));
+        painting.watercolors.add(new Watercolor(x * res, y * res,0.4 * res, colors[3]));
       } else if (value < 0.9) {
-        painting.watercolors.add(new Watercolor(x * res, y * res,0.25 * res, colors[4]));
+        painting.watercolors.add(new Watercolor(x * res, y * res,0.4 * res, colors[4]));
       } else {
-        painting.watercolors.add(new Watercolor(x * res, y * res,0.25 * res, colors[5]));
+        painting.watercolors.add(new Watercolor(x * res, y * res,0.4 * res, colors[5]));
       }
     }
   }
